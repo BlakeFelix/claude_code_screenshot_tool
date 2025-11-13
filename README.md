@@ -24,12 +24,13 @@ When debugging dashboards or UIs with Claude Code, you often need to show Claude
 - Linux with X11 (tested on Ubuntu)
 - `scrot` screenshot utility
 - `xdotool` for window-specific screenshots (optional)
-- `imagemagick` for cleaner window captures (optional)
+- `imagemagick` for zoom and cleaner window captures (optional)
+- `bc` for zoom calculations (optional)
 - Claude Code with multimodal image support
 
 ```bash
 # Install required tools
-sudo apt-get install scrot xdotool imagemagick
+sudo apt-get install scrot xdotool imagemagick bc
 
 # Download and install
 git clone https://github.com/YOUR_USERNAME/screenshot-tool-claude
@@ -77,6 +78,61 @@ File size: 892K
 - Smaller file sizes (only one window)
 - Focus on specific application
 - Claude can run autonomously (no manual clicking)
+
+### Interactive Region Selection
+
+**NEW in v1.1.0!** Select a specific region by drawing a box:
+
+```bash
+~/Desktop/screenshot_dashboard.sh --select
+# or
+~/Desktop/screenshot_dashboard.sh -s
+```
+
+When you run this, your cursor will turn into a crosshair. Click and drag to select the region you want to capture.
+
+**Perfect for:**
+- Capturing just the error message area
+- Focusing on a specific dashboard section
+- Excluding irrelevant parts of the screen
+- Getting smaller, more focused screenshots
+
+### Zoom/Magnify for Better Text Recognition
+
+**NEW in v1.1.0!** Upscale screenshots for better readability by multimodal models:
+
+```bash
+# 2x zoom (200% size)
+~/Desktop/screenshot_dashboard.sh --zoom 2
+
+# 1.5x zoom (150% size)
+~/Desktop/screenshot_dashboard.sh --zoom 1.5
+
+# Combine with region selection for "magnifying glass" effect
+~/Desktop/screenshot_dashboard.sh --select --zoom 3
+```
+
+**Output:**
+```
+📸 Draw a box around the region you want to capture...
+🔍 Zooming 3x...
+✅ Screenshot saved: /home/user/Pictures/Screenshots/dashboard_20251112_160530.png
+File size: 1.2M
+Zoom level: 3x
+
+To view, Claude can read: /home/user/Pictures/Screenshots/dashboard_20251112_160530.png
+```
+
+**Benefits:**
+- Multimodal models can read tiny text more easily
+- Dashboard text at low resolutions becomes legible
+- Better for detailed error messages or log output
+- Helps with high-DPI displays
+
+**Use cases:**
+- `--select --zoom 2`: Magnifying glass - select small text area and zoom it
+- `--window "Terminal" --zoom 1.5`: Capture terminal with larger text
+- `--zoom 2`: Make entire dashboard more readable
 
 ### With Claude Code
 
@@ -179,10 +235,12 @@ Pull requests welcome! Potential improvements:
 - [ ] Wayland support (alternative to scrot)
 - [ ] macOS version (using `screencapture`)
 - [ ] Windows version (using PowerShell)
-- [x] Capture specific window by title (✅ implemented!)
+- [x] Capture specific window by title (✅ v1.0.0)
+- [x] Region selection mode (✅ v1.1.0)
+- [x] Zoom/magnify for better text recognition (✅ v1.1.0)
 - [ ] Annotate screenshots before sending to Claude
-- [ ] Region selection mode (capture part of screen)
 - [ ] Video recording support
+- [ ] OCR preprocessing for ultra-low resolution text
 
 ## License
 
