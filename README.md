@@ -168,6 +168,54 @@ Claude: *runs screenshot_dashboard.sh --zone bottom --zoom 2*
 Claude: "I can now clearly read the console at the bottom showing..."
 ```
 
+### Recursive Zones (Progressive Zooming)
+
+**NEW in v1.3.0!** Chain zones together using `:` to progressively zoom into specific areas:
+
+```bash
+# Get right half of bottom third
+~/Desktop/screenshot_dashboard.sh --zone bottom:right --zoom 2
+
+# Center of bottom-right quadrant, magnified 3x
+~/Desktop/screenshot_dashboard.sh --zone bottom-right:center --zoom 3
+
+# Progressive center zooming (center of center of center)
+~/Desktop/screenshot_dashboard.sh --zone center:center:center --zoom 4
+```
+
+**How it works:**
+- Each zone is applied sequentially to the result of the previous zone
+- First zone crops the full image
+- Second zone crops the result of the first zone
+- Third zone crops the result of the second zone
+- And so on...
+
+**Real example:**
+```bash
+# Capture: center → bottom-right → center, then zoom 3x
+$ ~/Desktop/screenshot_dashboard.sh --zone center:bottom-right:center --zoom 3
+
+✂️  Cropping zone chain: center:bottom-right:center (3 levels)
+  ↳ Level 1: center (3840x2160 → 1920x1080+960+540)
+  ↳ Level 2: bottom-right (1920x1080 → 960x540+960+540)
+  ↳ Level 3: center (960x540 → 480x270+240+135)
+🔍 Zooming 3x...
+✅ Screenshot saved: dashboard_20251112_202618.png
+File size: 84K
+```
+
+**Use cases:**
+- `bottom:right`: Right side of console/terminal area
+- `center:top`: Top portion of main content area
+- `bottom:left:top-left`: Top-left of left side of bottom third (ultra-specific targeting!)
+- `center:center`: 25% of screen centered (progressive zoom without image zoom)
+
+**Benefits:**
+- **Surgical precision**: Target exact regions autonomously
+- **Compound positioning**: Combine relative positions
+- **Progressive refinement**: Zoom in stages to exact target
+- **No pixel calculations**: Use natural language zones instead of coordinates
+
 ### Custom Region Capture
 
 For precise control, specify exact pixel coordinates:
@@ -288,6 +336,7 @@ Pull requests welcome! Potential improvements:
 - [x] Zoom/magnify for better text recognition (✅ v1.1.0)
 - [x] Pre-defined zones for autonomous capture (✅ v1.2.0)
 - [x] Custom region by coordinates (✅ v1.2.0)
+- [x] Recursive/chained zones (✅ v1.3.0)
 - [ ] Annotate screenshots before sending to Claude
 - [ ] Video recording support
 - [ ] OCR preprocessing for ultra-low resolution text

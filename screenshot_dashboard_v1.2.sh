@@ -59,18 +59,13 @@ while [[ $# -gt 0 ]]; do
             echo "  top-left, top-right, bottom-left, bottom-right"
             echo "  center, top, middle, bottom, left, right"
             echo ""
-            echo "Recursive zones (v1.3.0+):"
-            echo "  Use colon to chain zones: --zone bottom:right"
-            echo "  Example: bottom:right = right half of bottom third"
-            echo "  Example: center:bottom-right = bottom-right quadrant of center"
-            echo ""
             echo "Examples:"
             echo "  $0                              # Full screen capture"
             echo "  $0 --window Firefox             # Capture Firefox window"
             echo "  $0 --zone bottom --zoom 2       # Bottom third, zoomed 2x"
-            echo "  $0 --zone bottom:right --zoom 3 # Right of bottom, 3x zoom"
-            echo "  $0 --zone center:center --zoom 4 # Center of center (progressive zoom)"
+            echo "  $0 --zone center --zoom 3       # Center area, magnified 3x"
             echo "  $0 --region 100,100,800,600     # Custom 800x600 region"
+            echo "  $0 --select                     # Draw box around region"
             exit 0
             ;;
         *)
@@ -151,75 +146,6 @@ if [ ! -f "$CAPTURE_PATH" ]; then
     exit 1
 fi
 
-# Function to calculate crop geometry for a single zone
-calculate_zone_geometry() {
-    local ZONE_NAME=$1
-    local CUR_WIDTH=$2
-    local CUR_HEIGHT=$3
-
-    case "$ZONE_NAME" in
-        top-left)
-            local W=$((CUR_WIDTH / 2))
-            local H=$((CUR_HEIGHT / 2))
-            echo "${W}x${H}+0+0"
-            ;;
-        top-right)
-            local W=$((CUR_WIDTH / 2))
-            local H=$((CUR_HEIGHT / 2))
-            local X=$((CUR_WIDTH / 2))
-            echo "${W}x${H}+${X}+0"
-            ;;
-        bottom-left)
-            local W=$((CUR_WIDTH / 2))
-            local H=$((CUR_HEIGHT / 2))
-            local Y=$((CUR_HEIGHT / 2))
-            echo "${W}x${H}+0+${Y}"
-            ;;
-        bottom-right)
-            local W=$((CUR_WIDTH / 2))
-            local H=$((CUR_HEIGHT / 2))
-            local X=$((CUR_WIDTH / 2))
-            local Y=$((CUR_HEIGHT / 2))
-            echo "${W}x${H}+${X}+${Y}"
-            ;;
-        center)
-            local W=$((CUR_WIDTH / 2))
-            local H=$((CUR_HEIGHT / 2))
-            local X=$((CUR_WIDTH / 4))
-            local Y=$((CUR_HEIGHT / 4))
-            echo "${W}x${H}+${X}+${Y}"
-            ;;
-        top)
-            local H=$((CUR_HEIGHT / 3))
-            echo "${CUR_WIDTH}x${H}+0+0"
-            ;;
-        middle)
-            local H=$((CUR_HEIGHT / 3))
-            local Y=$((CUR_HEIGHT / 3))
-            echo "${CUR_WIDTH}x${H}+0+${Y}"
-            ;;
-        bottom)
-            local H=$((CUR_HEIGHT / 3))
-            local Y=$((CUR_HEIGHT * 2 / 3))
-            echo "${CUR_WIDTH}x${H}+0+${Y}"
-            ;;
-        left)
-            local W=$((CUR_WIDTH / 2))
-            echo "${W}x${CUR_HEIGHT}+0+0"
-            ;;
-        right)
-            local W=$((CUR_WIDTH / 2))
-            local X=$((CUR_WIDTH / 2))
-            echo "${W}x${CUR_HEIGHT}+${X}+0"
-            ;;
-        *)
-            echo ""
-            return 1
-            ;;
-    esac
-    return 0
-}
-
 # Post-processing (crop zones/regions, then zoom)
 if [ "$NEEDS_PROCESSING" = true ]; then
     if ! command -v convert &> /dev/null; then
@@ -228,71 +154,88 @@ if [ "$NEEDS_PROCESSING" = true ]; then
         mv "$CAPTURE_PATH" "$SCREENSHOT_PATH"
     else
         WORK_FILE="$CAPTURE_PATH"
+        CROP_FILE="${SCREENSHOT_DIR}/crop_${TIMESTAMP}.png"
 
-        # Step 1: Apply zones or region
-        if [ -n "$ZONE" ] || [ -n "$REGION" ]; then
-            if [ -n "$ZONE" ]; then
-                # Parse recursive zones (split by colon)
-                IFS=':' read -ra ZONE_ARRAY <<< "$ZONE"
-                echo "✂️  Cropping zone chain: $ZONE (${#ZONE_ARRAY[@]} levels)"
+        # Function to calculate crop geometry for a single zone
+        calculate_zone_geometry() {
+            local ZONE_NAME=$1
+            local CUR_WIDTH=$2
+            local CUR_HEIGHT=$3
 
-                # Apply each zone sequentially
-                for i in "${!ZONE_ARRAY[@]}"; do
-                    ZONE_NAME="${ZONE_ARRAY[$i]}"
-                    ZONE_NUM=$((i + 1))
+            case "$ZONE_NAME" in
+                        top-left)
+                            CROP_GEOMETRY="${WIDTH}x${HEIGHT}+0+0"
+                            WIDTH=$((WIDTH / 2))
+                            HEIGHT=$((HEIGHT / 2))
+                            CROP_GEOMETRY="${WIDTH}x${HEIGHT}+0+0"
+                            ;;
+                        top-right)
+                            WIDTH_HALF=$((WIDTH / 2))
+                            HEIGHT=$((HEIGHT / 2))
+                            CROP_GEOMETRY="${WIDTH_HALF}x${HEIGHT}+${WIDTH_HALF}+0"
+                            ;;
+                        bottom-left)
+                            WIDTH=$((WIDTH / 2))
+                            HEIGHT_HALF=$((HEIGHT / 2))
+                            CROP_GEOMETRY="${WIDTH}x${HEIGHT_HALF}+0+${HEIGHT_HALF}"
+                            ;;
+                        bottom-right)
+                            WIDTH_HALF=$((WIDTH / 2))
+                            HEIGHT_HALF=$((HEIGHT / 2))
+                            CROP_GEOMETRY="${WIDTH_HALF}x${HEIGHT_HALF}+${WIDTH_HALF}+${HEIGHT_HALF}"
+                            ;;
+                        center)
+                            WIDTH_QUARTER=$((WIDTH / 4))
+                            HEIGHT_QUARTER=$((HEIGHT / 4))
+                            WIDTH_HALF=$((WIDTH / 2))
+                            HEIGHT_HALF=$((HEIGHT / 2))
+                            CROP_GEOMETRY="${WIDTH_HALF}x${HEIGHT_HALF}+${WIDTH_QUARTER}+${HEIGHT_QUARTER}"
+                            ;;
+                        top)
+                            HEIGHT_THIRD=$((HEIGHT / 3))
+                            CROP_GEOMETRY="${WIDTH}x${HEIGHT_THIRD}+0+0"
+                            ;;
+                        middle)
+                            HEIGHT_THIRD=$((HEIGHT / 3))
+                            CROP_GEOMETRY="${WIDTH}x${HEIGHT_THIRD}+0+${HEIGHT_THIRD}"
+                            ;;
+                        bottom)
+                            HEIGHT_THIRD=$((HEIGHT / 3))
+                            OFFSET=$((HEIGHT_THIRD * 2))
+                            CROP_GEOMETRY="${WIDTH}x${HEIGHT_THIRD}+0+${OFFSET}"
+                            ;;
+                        left)
+                            WIDTH=$((WIDTH / 2))
+                            CROP_GEOMETRY="${WIDTH}x${HEIGHT}+0+0"
+                            ;;
+                        right)
+                            WIDTH_HALF=$((WIDTH / 2))
+                            CROP_GEOMETRY="${WIDTH_HALF}x${HEIGHT}+${WIDTH_HALF}+0"
+                            ;;
+                        *)
+                            echo "❌ Unknown zone: $ZONE"
+                            echo "Available: top-left, top-right, bottom-left, bottom-right, center, top, middle, bottom, left, right"
+                            mv "$WORK_FILE" "$SCREENSHOT_PATH"
+                            exit 1
+                            ;;
+                    esac
+                elif [ -n "$REGION" ]; then
+                    echo "✂️  Cropping region: $REGION"
+                    # Region format: X,Y,W,H
+                    X=$(echo $REGION | cut -d',' -f1)
+                    Y=$(echo $REGION | cut -d',' -f2)
+                    W=$(echo $REGION | cut -d',' -f3)
+                    H=$(echo $REGION | cut -d',' -f4)
+                    CROP_GEOMETRY="${W}x${H}+${X}+${Y}"
+                fi
 
-                    # Get current dimensions
-                    DIMENSIONS=$(identify -format "%wx%h" "$WORK_FILE" 2>/dev/null)
-                    WIDTH=$(echo $DIMENSIONS | cut -d'x' -f1)
-                    HEIGHT=$(echo $DIMENSIONS | cut -d'x' -f2)
-
-                    if [ -z "$WIDTH" ] || [ -z "$HEIGHT" ]; then
-                        echo "⚠️  Warning: Could not determine image dimensions at level $ZONE_NUM"
-                        break
-                    fi
-
-                    # Calculate geometry for this zone
-                    CROP_GEOMETRY=$(calculate_zone_geometry "$ZONE_NAME" "$WIDTH" "$HEIGHT")
-
-                    if [ $? -ne 0 ] || [ -z "$CROP_GEOMETRY" ]; then
-                        echo "❌ Unknown zone at level $ZONE_NUM: '$ZONE_NAME'"
-                        echo "Available: top-left, top-right, bottom-left, bottom-right, center, top, middle, bottom, left, right"
-                        rm "$WORK_FILE" 2>/dev/null
-                        exit 1
-                    fi
-
-                    echo "  ↳ Level $ZONE_NUM: $ZONE_NAME (${WIDTH}x${HEIGHT} → ${CROP_GEOMETRY})"
-
-                    # Apply this zone's crop
-                    TEMP_CROP="${SCREENSHOT_DIR}/zone_${ZONE_NUM}_${TIMESTAMP}.png"
-                    convert "$WORK_FILE" -crop "$CROP_GEOMETRY" +repage "$TEMP_CROP" 2>/dev/null
-
-                    if [ $? -eq 0 ] && [ -f "$TEMP_CROP" ]; then
-                        rm "$WORK_FILE" 2>/dev/null
-                        WORK_FILE="$TEMP_CROP"
-                    else
-                        echo "⚠️  Warning: crop failed at level $ZONE_NUM"
-                        break
-                    fi
-                done
-
-            elif [ -n "$REGION" ]; then
-                echo "✂️  Cropping region: $REGION"
-                # Region format: X,Y,W,H
-                X=$(echo $REGION | cut -d',' -f1)
-                Y=$(echo $REGION | cut -d',' -f2)
-                W=$(echo $REGION | cut -d',' -f3)
-                H=$(echo $REGION | cut -d',' -f4)
-                CROP_GEOMETRY="${W}x${H}+${X}+${Y}"
-
-                TEMP_CROP="${SCREENSHOT_DIR}/region_${TIMESTAMP}.png"
-                convert "$WORK_FILE" -crop "$CROP_GEOMETRY" +repage "$TEMP_CROP" 2>/dev/null
-
-                if [ $? -eq 0 ] && [ -f "$TEMP_CROP" ]; then
-                    rm "$WORK_FILE" 2>/dev/null
-                    WORK_FILE="$TEMP_CROP"
+                # Apply crop
+                convert "$WORK_FILE" -crop "$CROP_GEOMETRY" +repage "$CROP_FILE" 2>/dev/null
+                if [ $? -eq 0 ]; then
+                    rm "$WORK_FILE"
+                    WORK_FILE="$CROP_FILE"
                 else
-                    echo "⚠️  Warning: region crop failed"
+                    echo "⚠️  Warning: crop failed, using original"
                 fi
             fi
         fi
