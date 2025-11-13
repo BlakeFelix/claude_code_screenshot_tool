@@ -134,6 +134,54 @@ To view, Claude can read: /home/user/Pictures/Screenshots/dashboard_20251112_160
 - `--window "Terminal" --zoom 1.5`: Capture terminal with larger text
 - `--zoom 2`: Make entire dashboard more readable
 
+### Zone-Based Capture (Autonomous)
+
+**NEW in v1.2.0!** Pre-defined zones that Claude can use autonomously without interactive selection:
+
+```bash
+# Capture bottom third of screen, zoomed 2x
+~/Desktop/screenshot_dashboard.sh --zone bottom --zoom 2
+
+# Capture center area, magnified 3x
+~/Desktop/screenshot_dashboard.sh --zone center --zoom 3
+
+# Just the left half
+~/Desktop/screenshot_dashboard.sh --zone left
+```
+
+**Available zones:**
+- **Quadrants**: `top-left`, `top-right`, `bottom-left`, `bottom-right`
+- **Center**: `center` (middle 50% of screen)
+- **Horizontal thirds**: `top`, `middle`, `bottom`
+- **Vertical halves**: `left`, `right`
+
+**Benefits:**
+- **Autonomous AI usage**: Claude can capture specific areas without user interaction
+- **Consistent regions**: Same zone always captures same area
+- **Perfect for dashboards**: Capture just the console, just the main area, etc.
+- **Combine with zoom**: Get high-res screenshots of specific regions
+
+**Example workflow:**
+```
+User: "check the dashboard for errors"
+Claude: *runs screenshot_dashboard.sh --zone bottom --zoom 2*
+Claude: "I can now clearly read the console at the bottom showing..."
+```
+
+### Custom Region Capture
+
+For precise control, specify exact pixel coordinates:
+
+```bash
+# Capture 800x600 region starting at (100, 100)
+~/Desktop/screenshot_dashboard.sh --region 100,100,800,600
+
+# Combine with zoom
+~/Desktop/screenshot_dashboard.sh --region 0,0,1000,500 --zoom 2
+```
+
+Format: `--region X,Y,WIDTH,HEIGHT` (in pixels)
+
 ### With Claude Code
 
 Just run the script and Claude will see the output path:
@@ -238,9 +286,12 @@ Pull requests welcome! Potential improvements:
 - [x] Capture specific window by title (✅ v1.0.0)
 - [x] Region selection mode (✅ v1.1.0)
 - [x] Zoom/magnify for better text recognition (✅ v1.1.0)
+- [x] Pre-defined zones for autonomous capture (✅ v1.2.0)
+- [x] Custom region by coordinates (✅ v1.2.0)
 - [ ] Annotate screenshots before sending to Claude
 - [ ] Video recording support
 - [ ] OCR preprocessing for ultra-low resolution text
+- [ ] Multi-monitor support with zone names like "monitor2:bottom"
 
 ## License
 
