@@ -79,6 +79,33 @@ File size: 892K
 - Focus on specific application
 - Claude can run autonomously (no manual clicking)
 
+**Combine with zones (v1.3.0+):**
+```bash
+# Capture Kimi window, then get bottom-right area, zoomed 2x
+~/Desktop/screenshot_dashboard.sh --window "Kimi" --zone bottom:right --zoom 2
+
+# Terminal window, bottom third only, magnified 3x
+~/Desktop/screenshot_dashboard.sh --window "Terminal" --zone bottom --zoom 3
+
+# Browser window, center of top area
+~/Desktop/screenshot_dashboard.sh --window "Firefox" --zone top:center --zoom 2
+```
+
+**Real example:**
+```bash
+$ ~/Desktop/screenshot_dashboard.sh --window "Kimi" --zone bottom:right --zoom 2
+
+📸 Capturing window: Kimi K2 Thinking (ID: 52428804)
+✂️  Cropping zone chain: bottom:right (2 levels)
+  ↳ Level 1: bottom (2185x2096 → 2185x698+0+1397)
+  ↳ Level 2: right (2185x698 → 1092x698+1092+0)
+🔍 Zooming 2x...
+✅ Screenshot saved: dashboard_20251112_202945.png
+File size: 252K
+```
+
+This is **incredibly powerful** for debugging specific applications - capture just one window, then recursively zoom into the exact area you need!
+
 ### Interactive Region Selection
 
 **NEW in v1.1.0!** Select a specific region by drawing a box:
