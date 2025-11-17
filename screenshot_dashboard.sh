@@ -18,6 +18,7 @@ ZOOM_FACTOR=""
 SELECT_MODE=false
 ZONE=""
 REGION=""
+DASHBOARD_MODE=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -42,6 +43,10 @@ while [[ $# -gt 0 ]]; do
             ZOOM_FACTOR="$2"
             shift 2
             ;;
+        --dashboard)
+            DASHBOARD_MODE=true
+            shift
+            ;;
         -h|--help)
             echo "Screenshot Tool for Claude Code"
             echo ""
@@ -53,6 +58,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --zone ZONE          Capture pre-defined zone (autonomous)"
             echo "  --region X,Y,W,H     Capture custom region (pixels)"
             echo "  -z, --zoom FACTOR    Zoom/upscale image (e.g., 2 for 2x)"
+            echo "  --dashboard          Smart mode for dashboard chat (center @ 2.5x)"
             echo "  -h, --help           Show this help message"
             echo ""
             echo "Available zones:"
@@ -66,6 +72,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Examples:"
             echo "  $0                              # Full screen capture"
+            echo "  $0 --dashboard                  # Smart dashboard mode (legible text)"
             echo "  $0 --window Firefox             # Capture Firefox window"
             echo "  $0 --zone bottom --zoom 2       # Bottom third, zoomed 2x"
             echo "  $0 --zone bottom:right --zoom 3 # Right of bottom, 3x zoom"
@@ -80,6 +87,13 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Apply dashboard mode preset
+if [ "$DASHBOARD_MODE" = true ]; then
+    echo "🎯 Dashboard mode: capturing center chat area with enhanced legibility"
+    ZONE="center"
+    ZOOM_FACTOR="2.5"
+fi
 
 # Validate zoom factor if provided
 if [ -n "$ZOOM_FACTOR" ]; then
